@@ -1,0 +1,16 @@
+{
+  "name": "Status",
+  "id": "742769304454952644",
+  "api": "1.0.0",
+  "main": "dist/bundle.js",
+  "menu": [{
+    "name": "Work in progress",
+    "command": "wip"
+  }, {
+    "name": "Ready for review",
+    "command": "ready-for-review"
+  }, {
+    "name": "Done",
+    "command": "done"
+  }]
+}
