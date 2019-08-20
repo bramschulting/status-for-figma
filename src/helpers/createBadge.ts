@@ -44,7 +44,6 @@ const createBadge = async (text: string, color: RGB) => {
 
   const backgroundNode = figma.createRectangle();
   backgroundNode.name = "Background";
-  backgroundNode.locked = true;
   backgroundNode.resize(frame.width, frame.height);
   backgroundNode.fills = [
     {
@@ -53,9 +52,12 @@ const createBadge = async (text: string, color: RGB) => {
     }
   ];
   backgroundNode.cornerRadius = 4.0;
+  backgroundNode.constraints = {
+    horizontal: "STRETCH",
+    vertical: "STRETCH"
+  };
 
   const textNode = figma.createText();
-  textNode.locked = true;
   textNode.resize(frame.width, frame.height);
   textNode.fontName = fontName;
   textNode.characters = text;
@@ -67,6 +69,10 @@ const createBadge = async (text: string, color: RGB) => {
       color: { r: 1, g: 1, b: 1 }
     }
   ];
+  textNode.constraints = {
+    horizontal: "STRETCH",
+    vertical: "STRETCH"
+  };
 
   frame.appendChild(backgroundNode);
   frame.appendChild(textNode);
