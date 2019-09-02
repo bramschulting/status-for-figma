@@ -1,11 +1,11 @@
 import { createBadgeForStatus, Status } from "./helpers/createBadge";
-import { findBadgeForNode, setBadgeForNode } from "./helpers/badgeForNode";
+import { getBadgeForNode, setBadgeForNode } from "./helpers/badgeForNode";
 
 const createBadges = async (status: Status) =>
   Promise.all(
     figma.currentPage.selection.map(async selectedNode => {
       // Remove existing badge
-      const currentBadge = findBadgeForNode(selectedNode);
+      const currentBadge = getBadgeForNode(selectedNode);
       if (currentBadge) {
         currentBadge.remove();
       }
