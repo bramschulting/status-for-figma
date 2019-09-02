@@ -38,7 +38,7 @@ const createBadge = async (text: string, color: RGB) => {
   const height = 30;
 
   const frame = figma.createFrame();
-  frame.name = text;
+  frame.name = `Status - ${text}`;
   frame.resize(width, height);
   frame.backgrounds = [];
 
