@@ -1,9 +1,15 @@
 import { createBadgeForStatus, Status } from "./helpers/createBadge";
 import { getBadgeForNode, setBadgeForNode } from "./helpers/badgeForNode";
 
-const createBadges = async (status: Status) =>
-  Promise.all(
-    figma.currentPage.selection.map(async selectedNode => {
+const createBadges = async (status: Status): Promise<string | undefined> => {
+  const { selection } = figma.currentPage;
+
+  if (selection.length <= 0) {
+    return Promise.resolve("Please select at least one element");
+  }
+
+  return Promise.all(
+    selection.map(async selectedNode => {
       // Remove existing badge
       const currentBadge = getBadgeForNode(selectedNode);
       if (currentBadge) {
@@ -22,13 +28,16 @@ const createBadges = async (status: Status) =>
       // Link badge to selected node for future reference
       setBadgeForNode(selectedNode, badge);
     })
-  );
+  ).then(() => undefined);
+};
 
 switch (figma.command) {
   case "wip":
   case "ready-for-review":
   case "done":
-    createBadges(figma.command as Status).then(() => figma.closePlugin());
+    createBadges(figma.command as Status).then(message =>
+      figma.closePlugin(message)
+    );
     break;
   default:
     figma.closePlugin();
