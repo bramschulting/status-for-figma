@@ -1,4 +1,8 @@
-import { createBadgeForStatus, Status } from "./helpers/createBadge";
+import {
+  createBadgeForStatus,
+  Status,
+  textForStatus
+} from "./helpers/createBadge";
 import { getBadgeForNode, setBadgeForNode } from "./helpers/badgeForNode";
 import {
   loadSettings,
@@ -7,7 +11,10 @@ import {
 } from "./helpers/settings";
 import { PluginMessage } from "./ui";
 
-const createBadges = async (status: Status): Promise<string | undefined> => {
+const createBadges = async (
+  status: Status,
+  settings: PluginSettings
+): Promise<string | undefined> => {
   const { selection } = figma.currentPage;
 
   if (selection.length <= 0) {
@@ -33,6 +40,24 @@ const createBadges = async (status: Status): Promise<string | undefined> => {
 
       // Link badge to selected node for future reference
       setBadgeForNode(selectedNode, badge);
+
+      // Add badge and node to group if needed
+      if (settings.shouldGroupBadgeAndElement) {
+        // If the current parent is a group containing only the selected node and badge, we can just use that one
+        const isAlreadyGrouped =
+          containingNode.type === "GROUP" &&
+          containingNode.children.length === 2;
+
+        // If there's no group, we create one
+        if (!isAlreadyGrouped) {
+          figma.group([badge, selectedNode], containingNode);
+        }
+
+        // Always make sure the name of the group is up to date
+        selectedNode.parent.name = `${selectedNode.name} - ${textForStatus(
+          status
+        )}`;
+      }
     })
   ).then(() => undefined);
 };
@@ -71,9 +96,9 @@ switch (figma.command) {
   case "wip":
   case "ready-for-review":
   case "done":
-    createBadges(figma.command as Status).then(message =>
-      figma.closePlugin(message)
-    );
+    loadSettings()
+      .then(settings => createBadges(figma.command as Status, settings))
+      .then(message => figma.closePlugin(message));
     break;
   case "settings":
     openSettings();

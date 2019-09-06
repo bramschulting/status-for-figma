@@ -15,7 +15,7 @@ const colorForStatus = (status: Status): RGB => {
   }
 };
 
-const textForStatus = (status: Status): string => {
+export const textForStatus = (status: Status): string => {
   switch (status) {
     case Status.WIP:
       return "Work in progress";
