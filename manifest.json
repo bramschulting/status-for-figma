@@ -2,7 +2,8 @@
   "name": "Status ✅",
   "id": "742769304454952644",
   "api": "1.0.0",
-  "main": "dist/bundle.js",
+  "main": "dist/plugin.js",
+  "ui": "dist/ui.html",
   "menu": [{
     "name": "Work in progress",
     "command": "wip"
@@ -12,5 +13,10 @@
   }, {
     "name": "Done",
     "command": "done"
+  }, {
+    "separator": true
+  }, {
+    "name": "Settings…",
+    "command": "settings"
   }]
 }

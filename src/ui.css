@@ -1,0 +1,122 @@
+/*
+  I extracted this from https://github.com/thomas-lowry/figma-plugin-ds
+*/
+
+* {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+/*  Typography */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 400;
+  src: url("https://rsms.me/inter/font-files/Inter-Regular.woff2?v=3.7")
+      format("woff2"),
+    url("https://rsms.me/inter/font-files/Inter-Regular.woff?v=3.7")
+      format("woff");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 500;
+  src: url("https://rsms.me/inter/font-files/Inter-Medium.woff2?v=3.7")
+      format("woff2"),
+    url("https://rsms.me/inter/font-files/Inter-Medium.woff2?v=3.7")
+      format("woff");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 600;
+  src: url("https://rsms.me/inter/font-files/Inter-SemiBold.woff2?v=3.7")
+      format("woff2"),
+    url("https://rsms.me/inter/font-files/Inter-SemiBold.woff2?v=3.7")
+      format("woff");
+}
+
+/* Switch */
+.switch {
+  font-family: "Inter", sans-serif;
+  font-weight: 400;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.005em;
+  position: relative;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: row;
+  flex-direction: row;
+  height: 32px;
+  cursor: default;
+}
+
+.switch__toggle {
+  display: none;
+}
+
+.switch__toggle:checked + label:before {
+  background-color: #000000;
+}
+
+.switch__toggle:checked + label:after {
+  -webkit-transform: translateX(14px);
+  transform: translateX(14px);
+}
+
+.switch__toggle:disabled + label {
+  opacity: 0.3;
+}
+
+.switch__label {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  width: 100%;
+  padding-left: 40px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.switch__label:before {
+  position: absolute;
+  top: 10px;
+  left: 6px;
+  display: block;
+  width: 24px;
+  height: 10px;
+  content: "";
+  -webkit-transition: background-color 0 0.2s;
+  transition: background-color 0 0.2s;
+  border: 1px solid #000000;
+  border-radius: 6px;
+  background-color: #ffffff;
+}
+
+.switch__label:after {
+  position: absolute;
+  top: 10px;
+  left: 6px;
+  display: block;
+  width: 10px;
+  height: 10px;
+  content: "";
+  -webkit-transition: -webkit-transform 0.2s;
+  transition: -webkit-transform 0.2s;
+  transition: transform 0.2s;
+  transition: transform 0.2s, -webkit-transform 0.2s;
+  border: 1px solid #000000;
+  border-radius: 50%;
+  background-color: white;
+}
