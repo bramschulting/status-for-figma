@@ -12,13 +12,17 @@ interface PluginData {
 export const decodePluginData = (
   encodedPluginData: string
 ): PluginData | undefined => {
-  const { nodeId, badgeId } = JSON.parse(encodedPluginData);
+  try {  
+    const { nodeId, badgeId } = JSON.parse(encodedPluginData);
 
-  if (!nodeId || !badgeId) {
+    if (!nodeId || !badgeId) {
+      return;
+    }
+
+    return { nodeId, badgeId } as PluginData;
+  } catch {
     return;
   }
-
-  return { nodeId, badgeId } as PluginData;
 };
 
 /**
