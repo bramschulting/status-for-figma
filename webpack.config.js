@@ -3,13 +3,13 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const HtmlWebpackInlineSourcePlugin = require("html-webpack-inline-source-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 
-module.exports = {
+module.exports = (env, argv) => ({
   mode: "none",
   entry: {
     plugin: "./src/plugin.ts",
     ui: "./src/ui.ts"
   },
-  devtool: "inline-source-map",
+  devtool: argv.mode === "production" ? false : "inline-source-map",
   module: {
     rules: [
       {
@@ -39,4 +39,4 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "dist")
   }
-};
+});
