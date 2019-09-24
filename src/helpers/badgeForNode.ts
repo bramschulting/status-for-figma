@@ -7,7 +7,7 @@ interface PluginData {
 
 /**
  * Convert a JSON string into a PluginData object
- * @param encodedPluginData
+ * @param string encodedPluginData
  */
 export const decodePluginData = (
   encodedPluginData: string
