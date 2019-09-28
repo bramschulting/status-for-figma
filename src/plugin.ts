@@ -1,7 +1,8 @@
 import {
-  createBadgeForStatus,
   Status,
-  textForStatus
+  textForStatus,
+  colorForStatus,
+  createBadge
 } from "./helpers/createBadge";
 import { getBadgeForNode, setBadgeForNode } from "./helpers/badgeForNode";
 import {
@@ -12,7 +13,8 @@ import {
 import { PluginMessage } from "./ui";
 
 const createBadges = async (
-  status: Status,
+  text: string,
+  color: RGB,
   settings: PluginSettings
 ): Promise<string | undefined> => {
   const { selection } = figma.currentPage;
@@ -30,7 +32,7 @@ const createBadges = async (
       }
 
       // Create the new badge
-      const badge = await createBadgeForStatus(status);
+      const badge = await createBadge(text, color);
       badge.x = selectedNode.x;
       badge.y = selectedNode.y - badge.height - 40;
 
@@ -54,13 +56,18 @@ const createBadges = async (
         }
 
         // Always make sure the name of the group is up to date
-        selectedNode.parent.name = `${selectedNode.name} - ${textForStatus(
-          status
-        )}`;
+        selectedNode.parent.name = `${selectedNode.name} - ${text}`;
       }
     })
   ).then(() => undefined);
 };
+
+function dispatchToUI(type: string, payload?: any) {
+  figma.ui.postMessage({
+    type,
+    payload
+  });
+}
 
 const openSettings = () => {
   // Show settings UI, this will be empty
@@ -69,10 +76,17 @@ const openSettings = () => {
 
   // Init the settings UI with data
   loadSettings().then(settings => {
-    figma.ui.postMessage({
-      type: "init",
-      payload: { settings }
-    });
+    dispatchToUI("init-settings", { settings });
+  });
+};
+
+const openCustomStatus = () => {
+  // Show the custom status UI
+  figma.showUI(__html__);
+
+  // Init the settings UI with data
+  loadSettings().then(settings => {
+    dispatchToUI("init-custom-status", { settings });
   });
 };
 
@@ -89,6 +103,11 @@ figma.ui.onmessage = event => {
       const nextSettings = payload.settings as PluginSettings;
       updateSettings(nextSettings);
       break;
+    case "set-custom-status":
+      loadSettings()
+        .then(settings => createBadges(payload.text, payload.color, settings))
+        .then(message => figma.closePlugin(message));
+      break;
   }
 };
 
@@ -96,9 +115,15 @@ switch (figma.command) {
   case "wip":
   case "ready-for-review":
   case "done":
+    const status = figma.command as Status;
     loadSettings()
-      .then(settings => createBadges(figma.command as Status, settings))
+      .then(settings =>
+        createBadges(textForStatus(status), colorForStatus(status), settings)
+      )
       .then(message => figma.closePlugin(message));
+    break;
+  case "custom":
+    openCustomStatus();
     break;
   case "settings":
     openSettings();

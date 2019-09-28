@@ -4,7 +4,7 @@ export enum Status {
   Done = "done"
 }
 
-const colorForStatus = (status: Status): RGB => {
+export const colorForStatus = (status: Status): RGB => {
   switch (status) {
     case Status.WIP:
       return { r: 235 / 255, g: 87 / 255, b: 87 / 255 };
@@ -26,7 +26,7 @@ export const textForStatus = (status: Status): string => {
   }
 };
 
-const createBadge = async (text: string, color: RGB) => {
+export const createBadge = async (text: string, color: RGB) => {
   const fontName: FontName = {
     family: "Roboto",
     style: "Bold"
@@ -79,6 +79,3 @@ const createBadge = async (text: string, color: RGB) => {
 
   return frame;
 };
-
-export const createBadgeForStatus = async (status: Status) =>
-  createBadge(textForStatus(status), colorForStatus(status));

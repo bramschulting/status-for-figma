@@ -41,7 +41,7 @@ function createSwitch(
   return wrapper;
 }
 
-const initUI = (settings: PluginSettings) => {
+const initSettingsUI = (settings: PluginSettings) => {
   const groupBadgeSwitch = createSwitch(
     "toggleGroupBadge",
     settings.shouldGroupBadgeAndElement,
@@ -61,6 +61,19 @@ const initUI = (settings: PluginSettings) => {
   document.body.appendChild(groupBadgeSwitch);
 };
 
+const initCustomStatusUI = (settings: PluginSettings) => {
+  settings.customStatuses.forEach(customStatus => {
+    const button = document.createElement("button");
+    button.innerText = customStatus.text;
+
+    button.addEventListener("click", () => {
+      dispatchToPlugin("set-custom-status", customStatus);
+    });
+
+    document.body.appendChild(button);
+  });
+};
+
 export interface PluginMessage {
   type: string;
   payload?: any;
@@ -70,10 +83,11 @@ onmessage = event => {
   const pluginMessage = event.data.pluginMessage as PluginMessage;
 
   switch (pluginMessage.type) {
-    case "init":
-      const settings = pluginMessage.payload.settings as PluginSettings;
-
-      initUI(settings);
+    case "init-settings":
+      initSettingsUI(pluginMessage.payload.settings as PluginSettings);
+      break;
+    case "init-custom-status":
+      initCustomStatusUI(pluginMessage.payload.settings as PluginSettings);
       break;
   }
 };

@@ -16,6 +16,11 @@
   }, {
     "separator": true
   }, {
+    "name": "Custom status…",
+    "command": "custom"
+  }, {
+    "separator": true
+  }, {
     "name": "Settings…",
     "command": "settings"
   }]
