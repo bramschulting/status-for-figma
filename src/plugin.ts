@@ -1,7 +1,10 @@
+import { Observable, merge } from "rxjs";
+import { filter, map } from "rxjs/operators";
 import {
-  createBadgeForStatus,
   Status,
-  textForStatus
+  textForStatus,
+  colorForStatus,
+  createBadge
 } from "./helpers/createBadge";
 import { getBadgeForNode, setBadgeForNode } from "./helpers/badgeForNode";
 import {
@@ -10,9 +13,11 @@ import {
   PluginSettings
 } from "./helpers/settings";
 import { PluginMessage } from "./ui";
+import { next } from "./helpers/next";
 
 const createBadges = async (
-  status: Status,
+  text: string,
+  color: RGB,
   settings: PluginSettings
 ): Promise<string | undefined> => {
   const { selection } = figma.currentPage;
@@ -30,7 +35,7 @@ const createBadges = async (
       }
 
       // Create the new badge
-      const badge = await createBadgeForStatus(status);
+      const badge = await createBadge(text, color);
       badge.x = selectedNode.x;
       badge.y = selectedNode.y - badge.height - 40;
 
@@ -54,56 +59,123 @@ const createBadges = async (
         }
 
         // Always make sure the name of the group is up to date
-        selectedNode.parent.name = `${selectedNode.name} - ${textForStatus(
-          status
-        )}`;
+        selectedNode.parent.name = `${selectedNode.name} - ${text}`;
       }
     })
   ).then(() => undefined);
 };
 
-const openSettings = () => {
+function dispatchToUI(type: string, payload?: any) {
+  figma.ui.postMessage({
+    type,
+    payload
+  });
+}
+
+const openSettingsUI = () => {
   // Show settings UI, this will be empty
   figma.showUI(__html__);
   figma.ui.resize(300, 72);
 
   // Init the settings UI with data
   loadSettings().then(settings => {
-    figma.ui.postMessage({
-      type: "init",
-      payload: { settings }
-    });
+    dispatchToUI("init-settings", { settings });
   });
 };
 
-figma.ui.onmessage = event => {
-  // Make sure this is a PluginMessage
-  if (!event.type) {
-    return;
-  }
+const openCustomStatusUI = () => {
+  // Show the custom status UI
+  figma.showUI(__html__);
 
-  const { type, payload } = event as PluginMessage;
-
-  switch (type) {
-    case "settings-changed":
-      const nextSettings = payload.settings as PluginSettings;
-      updateSettings(nextSettings);
-      break;
-  }
+  // Init the settings UI with data
+  loadSettings().then(settings => {
+    dispatchToUI("init-custom-status", { settings });
+  });
 };
 
-switch (figma.command) {
-  case "wip":
-  case "ready-for-review":
-  case "done":
-    loadSettings()
-      .then(settings => createBadges(figma.command as Status, settings))
-      .then(message => figma.closePlugin(message));
-    break;
-  case "settings":
-    openSettings();
-    break;
-  default:
-    figma.closePlugin();
-    break;
-}
+// Definition of the streams. Simply subscribing to a stream should have no side effects
+
+/** Stream of messages coming from the plugin UI */
+const uiMessage$ = new Observable<any>(subscriber => {
+  figma.ui.onmessage = event => {
+    subscriber.next(event);
+  };
+});
+
+/** Stream of `PluginMessage`s coming from the UI part of the plugin */
+const pluginMessage$ = uiMessage$.pipe(
+  filter(event => event.type !== undefined),
+  map(event => ({ type: event.type, payload: event.payload } as PluginMessage))
+);
+
+/** Stream of messages signaling that the settings have been changed */
+const settingsChangedMessage$ = pluginMessage$.pipe(
+  filter(message => message.type === "settings-changed")
+);
+
+/** Stream of messages signaling a custom status has been selected */
+const customStatusMessage$ = pluginMessage$.pipe(
+  filter(message => message.type === "set-custom-status")
+);
+
+/** Stream of custom `text` and `color` status combinations */
+const customStatus$ = customStatusMessage$.pipe(
+  map(message => ({
+    text: message.payload.text as string,
+    color: message.payload.color as RGB
+  }))
+);
+
+/** Stream of incoming Figma commands (from the plugin menu) */
+const command$ = new Observable<string>(subscriber => {
+  subscriber.next(figma.command);
+  subscriber.complete();
+});
+
+/** Stream of commands signaling a preset status menu item has been selected */
+const statusCommand$ = command$.pipe(
+  filter(command => ["wip", "ready-for-review", "done"].includes(command))
+);
+
+/** Stream of preset `text` and `color` status combinations */
+const presetStatus$ = statusCommand$.pipe(
+  map(command => command as Status),
+  map(status => ({
+    text: textForStatus(status),
+    color: colorForStatus(status)
+  }))
+);
+
+/** Stream of commands signaling the 'Custom' menu item has been selected */
+const customCommand$ = command$.pipe(filter(command => command === "custom"));
+
+/** Stream of commands signaling the 'Settings' menu item has been selected */
+const settingsCommand$ = command$.pipe(
+  filter(command => command === "settings")
+);
+
+// Subscribe to streams. This is where the side effects should take place.
+
+// Open settings UI
+settingsCommand$.subscribe(next(openSettingsUI));
+
+// Update plugin settings
+settingsChangedMessage$.subscribe(
+  next(async message => {
+    const nextSettings = message.payload.settings as PluginSettings;
+    await updateSettings(nextSettings);
+  })
+);
+
+// Open custom status UI
+customCommand$.subscribe(next(openCustomStatusUI));
+
+// Create badges, either via the stream of preset statuses of the stream of custom statuses
+merge(presetStatus$, customStatus$).subscribe(
+  next(async ({ text, color }) => {
+    const settings = await loadSettings();
+    const message = await createBadges(text, color, settings);
+
+    figma.closePlugin(message);
+  })
+);
