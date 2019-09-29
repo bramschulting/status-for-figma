@@ -1,5 +1,8 @@
-import "./ui.css";
+import { ReplaySubject, fromEvent } from "rxjs";
+import { filter, map } from "rxjs/operators";
+import { next } from "./helpers/next";
 import { PluginSettings } from "./helpers/settings";
+import "./ui.css";
 
 function dispatchToPlugin(type: string, payload?: any) {
   parent.postMessage(
@@ -65,9 +68,12 @@ const initCustomStatusUI = (settings: PluginSettings) => {
   settings.customStatuses.forEach(customStatus => {
     const button = document.createElement("button");
     button.innerText = customStatus.text;
+    const buttonClick$ = fromEvent(button, "click");
 
-    button.addEventListener("click", () => {
-      dispatchToPlugin("set-custom-status", customStatus);
+    buttonClick$.subscribe({
+      next: () => {
+        dispatchToPlugin("set-custom-status", customStatus);
+      }
     });
 
     document.body.appendChild(button);
@@ -79,15 +85,44 @@ export interface PluginMessage {
   payload?: any;
 }
 
-onmessage = event => {
-  const pluginMessage = event.data.pluginMessage as PluginMessage;
+// Definition of the streams. Simply subscribing to a stream should have no side effects
 
-  switch (pluginMessage.type) {
-    case "init-settings":
-      initSettingsUI(pluginMessage.payload.settings as PluginSettings);
-      break;
-    case "init-custom-status":
-      initCustomStatusUI(pluginMessage.payload.settings as PluginSettings);
-      break;
-  }
+/** Stream of messages coming from the non-UI part of the plugin */
+const message$ = new ReplaySubject<MessageEvent>();
+onmessage = message => {
+  message$.next(message);
 };
+
+/** Stream of `PluginMessage`s coming from the non-UI part of the plugin */
+const pluginMessage$ = message$.pipe(
+  filter(message => message.data.pluginMessage.type !== undefined),
+  map(message => message.data.pluginMessage as PluginMessage)
+);
+
+/** Stream of messages signaling the settings UI can be initiated */
+const initSettingsMessage$ = pluginMessage$.pipe(
+  filter(message => message.type === "init-settings")
+);
+
+/** Stream of messages signaling the custom status UI can be initiated */
+const initCustomStatusMessage$ = pluginMessage$.pipe(
+  filter(message => message.type === "init-custom-status")
+);
+
+// Subscribe to streams. This is where the side effects should take place.
+
+// Init settings UI
+initSettingsMessage$.subscribe(
+  next(message => {
+    const settings = message.payload.settings as PluginSettings;
+    initSettingsUI(settings);
+  })
+);
+
+// Init custom status UI
+initCustomStatusMessage$.subscribe(
+  next(message => {
+    const settings = message.payload.settings as PluginSettings;
+    initCustomStatusUI(settings);
+  })
+);
